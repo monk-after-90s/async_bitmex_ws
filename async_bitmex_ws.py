@@ -1,7 +1,6 @@
 import websocket
-import threading
+import websockets
 import traceback
-from time import sleep
 import json
 import logging
 import urllib
@@ -21,7 +20,16 @@ class BitMEXWebsocket:
     # Don't grow a table larger than this amount. Helps cap memory usage.
     MAX_TABLE_LEN = 200
 
-    def __init__(self, endpoint, symbol, api_key=None, api_secret=None):
+    @classmethod
+    async def create_instance(cls, symbol, api_key=None, api_secret=None, testnet=False, timeout=3600):
+        '''
+        Asynchronously create instance.
+        '''
+        instance = cls(symbol, api_key, api_secret, testnet, timeout)
+        await instance.__connect()
+        return instance
+
+    def __init__(self, symbol, api_key=None, api_secret=None, testnet=False, timeout=3600):
         '''Connect to the websocket and initialize data stores.'''
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initializing WebSocket.")
@@ -42,16 +50,13 @@ class BitMEXWebsocket:
 
         # We can subscribe right in the connection querystring, so let's build that.
         # Subscribe to all pertinent endpoints
-        wsURL = self.__get_url()  # todo 订阅内容拆解成单独的方法，首次调用时申请
-        self.logger.info("Connecting to %s" % wsURL)
-        self.__connect(wsURL, symbol)
-        self.logger.info('Connected to WS.')
+        # wsURL = self.__get_url(# todo 订阅内容拆解成单独的方法，首次调用时申请
 
-        # Connected. Wait for partials
-        self.__wait_for_symbol(symbol)
-        if api_key:
-            self.__wait_for_account()
-        self.logger.info('Got all market data. Starting.')
+        # # Connected. Wait for partials
+        # self.__wait_for_symbol(symbol)
+        # if api_key:
+        #     self.__wait_for_account()
+        # self.logger.info('Got all market data. Starting.')
 
     def exit(self):
         '''Call this to exit - will close websocket.'''
@@ -146,16 +151,16 @@ class BitMEXWebsocket:
         urlParts[2] = "/realtime"
         return urllib.parse.urlunparse(urlParts)
 
-    def __wait_for_account(self):
-        '''On subscribe, this data will come down. Wait for it.'''
-        # Wait for the keys to show up from the ws
-        while not {'margin', 'position', 'order', 'orderBookL2'} <= set(self.data):
-            sleep(0.1)
-
-    def __wait_for_symbol(self, symbol):
-        '''On subscribe, this data will come down. Wait for it.'''
-        while not {'instrument', 'trade', 'quote'} <= set(self.data):
-            sleep(0.1)
+    # def __wait_for_account(self):
+    #     '''On subscribe, this data will come down. Wait for it.'''
+    #     # Wait for the keys to show up from the ws
+    #     while not {'margin', 'position', 'order', 'orderBookL2'} <= set(self.data):
+    #         sleep(0.1)
+    #
+    # def __wait_for_symbol(self, symbol):
+    #     '''On subscribe, this data will come down. Wait for it.'''
+    #     while not {'instrument', 'trade', 'quote'} <= set(self.data):
+    #         sleep(0.1)
 
     def __send_command(self, command, args=None):
         '''Send a raw command.'''
