@@ -25,8 +25,7 @@ class BitMEXWebsocket:
         '''Connect to the websocket and initialize data stores.'''
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initializing WebSocket.")
-
-        self.endpoint = endpoint
+        self.testnet = testnet
         self.symbol = symbol
 
         if api_key is not None and api_secret is None:
@@ -162,7 +161,8 @@ class BitMEXWebsocket:
         subscriptions = [sub + ':' + self.symbol for sub in symbolSubs]
         subscriptions += genericSubs
 
-        urlParts = list(urllib.parse.urlparse(self.endpoint))
+        urlParts = list(urllib.parse.urlparse(
+            "https://testnet.bitmex.com/api/v1" if self.testnet else 'https://www.bitmex.com/api/v1'))
         urlParts[0] = urlParts[0].replace('http', 'ws')
         urlParts[2] = "/realtime?subscribe={}".format(','.join(subscriptions))
         return urllib.parse.urlunparse(urlParts)
