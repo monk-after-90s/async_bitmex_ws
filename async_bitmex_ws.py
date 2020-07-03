@@ -164,11 +164,11 @@ class BitMEXWebsocket:
     #     while not {'instrument', 'trade', 'quote'} <= set(self.data):
     #         sleep(0.1)
 
-    def __send_command(self, command, args=None):
+    async def __send_command(self, command, args=None):
         '''Send a raw command.'''
         if args is None:
             args = []
-        self.ws.send(json.dumps({"op": command, "args": args}))
+        await self.ws.send(json.dumps({"op": command, "args": args}))
 
     def __on_message(self, message):
         '''Handler for parsing WS messages.'''
