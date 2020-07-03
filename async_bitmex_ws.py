@@ -221,11 +221,13 @@ class AsyncBitMEXWebsocket:
         action = message.get("action")
         try:
             to_del_items = []
-            future: asyncio.Future
+            # future: asyncio.Future
             for future, condition in self._detect_hook.items():
-                to_del_items.append(future)
                 if all([message.get(key, None) == value for key, value in condition.items()]):
                     future.set_result(message)
+                if future.done():
+                    to_del_items.append(future)
+
             [self._detect_hook.pop(item) for item in to_del_items]
             if 'subscribe' in message:
                 self.logger.debug("Subscribed to %s." % message['subscribe'])
