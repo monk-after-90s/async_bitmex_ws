@@ -40,6 +40,18 @@ class AsyncBitMEXWebsocket:
         async for message in self.ws:  # todo 将ws开放出来，比如用探针实现
             asyncio.create_task(self.__on_message(message))
 
+    def put_detect_hook(self, condition: dict):
+        msg_receiver = asyncio.get_running_loop().create_future()
+        self._detect_hook[msg_receiver] = condition
+        return msg_receiver
+
+    async def new_message(self):
+        hook = None
+        while not hook:
+            hook = self.put_detect_hook({})
+            yield await hook
+            hook = None
+
     def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600, ):
         '''Connect to the websocket and initialize data stores.'''
         self.logger = logger
