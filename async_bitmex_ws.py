@@ -35,7 +35,7 @@ class BitMEXWebsocket:
     async def _activte(self):
         async for message in self.ws:
             # await asyncio.sleep(0.1)
-            self.__on_message(message)
+            asyncio.create_task(self.__on_message(message))
 
     def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600):
         '''Connect to the websocket and initialize data stores.'''
@@ -180,7 +180,7 @@ class BitMEXWebsocket:
             args = []
         await self.ws.send(json.dumps({"op": command, "args": args}))
 
-    def __on_message(self, message):
+    async def __on_message(self, message):
         '''Handler for parsing WS messages.'''
         message = json.loads(message)
         self.logger.debug(json.dumps(message))
