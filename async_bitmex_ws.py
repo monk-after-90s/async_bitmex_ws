@@ -38,7 +38,6 @@ class AsyncBitMEXWebsocket:
 
     async def _activte(self):
         async for message in self.ws:  # todo 将ws开放出来，比如用探针实现
-            # await asyncio.sleep(0.1)
             asyncio.create_task(self.__on_message(message))
 
     def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600, ):
@@ -85,9 +84,10 @@ class AsyncBitMEXWebsocket:
             asyncio.create_task(self.__send_command('subscribe', args=[
                 f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
-            sub_event = asyncio.Event()
-            self._detect_hook[sub_event] = {"table": f"{subject}", "action": "partial"}
-            await sub_event.wait()
+            sub_awaitable = asyncio.get_running_loop().create_future()
+
+            self._detect_hook[sub_awaitable] = {"table": f"{subject}", "action": "partial"}
+            await sub_awaitable
 
     async def get_instrument(self):
         '''Get the raw instrument data for this symbol.'''
@@ -207,12 +207,11 @@ class AsyncBitMEXWebsocket:
         action = message.get("action")
         try:
             to_del_items = []
-            for event, condition in self._detect_hook.items():
-                if event.is_set():
-                    to_del_items.append(event)
-                elif all([message.get(key, None) == value for key, value in condition.items()]):
-                    to_del_items.append(event)
-                    event.set()
+            future: asyncio.Future
+            for future, condition in self._detect_hook.items():
+                to_del_items.append(future)
+                if all([message.get(key, None) == value for key, value in condition.items()]):
+                    future.set_result(message)
             [self._detect_hook.pop(item) for item in to_del_items]
             if 'subscribe' in message:
                 self.logger.debug("Subscribed to %s." % message['subscribe'])
