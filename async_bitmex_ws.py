@@ -22,7 +22,7 @@ class BitMEXWebsocket:
     MAX_TABLE_LEN = 200
 
     @classmethod
-    async def create_instance(cls, symbol, api_key=None, api_secret=None, testnet=False, timeout=3600):
+    async def create_instance(cls, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600):
         '''
         Asynchronously create instance.
         '''
@@ -36,7 +36,7 @@ class BitMEXWebsocket:
             # await asyncio.sleep(0.1)
             self.__on_message(message)
 
-    def __init__(self, symbol, api_key=None, api_secret=None, testnet=False, timeout=3600):
+    def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600):
         '''Connect to the websocket and initialize data stores.'''
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initializing WebSocket.")
