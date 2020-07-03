@@ -98,10 +98,8 @@ class AsyncBitMEXWebsocket:
             asyncio.create_task(self.__send_command('subscribe', args=[
                 f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
-            sub_awaitable = asyncio.get_running_loop().create_future()
-
-            self._detect_hook[sub_awaitable] = {"table": f"{subject}", "action": "partial"}
-            await sub_awaitable
+            async for news in self.new_message({"table": f"{subject}", "action": "partial"}):
+                break
 
     async def get_instrument(self):
         '''Get the raw instrument data for this symbol.'''
