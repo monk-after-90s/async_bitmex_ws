@@ -1,3 +1,5 @@
+import asyncio
+
 import websocket
 import websockets
 import traceback
@@ -58,10 +60,10 @@ class BitMEXWebsocket:
         #     self.__wait_for_account()
         # self.logger.info('Got all market data. Starting.')
 
-    def exit(self):
+    async def exit(self):
         '''Call this to exit - will close websocket.'''
         self.exited = True
-        self.ws.close()
+        await asyncio.create_task(self.ws.close())
 
     def get_instrument(self):
         '''Get the raw instrument data for this symbol.'''
