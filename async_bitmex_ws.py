@@ -7,7 +7,7 @@ import json
 import logging
 import urllib
 import math
-from util.api_key import generate_nonce, generate_signature
+from util.api_key import generate_signature
 
 
 # Naive implementation of connecting to BitMEX websocket for streaming realtime data.
@@ -21,6 +21,9 @@ from util.api_key import generate_nonce, generate_signature
 class BitMEXWebsocket:
     # Don't grow a table larger than this amount. Helps cap memory usage.
     MAX_TABLE_LEN = 200
+
+    symbolSubs = ["execution", "instrument", "order", "orderBookL2", "position", "quote", "trade"]
+    genericSubs = ["margin"]
 
     @classmethod
     async def create_instance(cls, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600):
@@ -37,13 +40,14 @@ class BitMEXWebsocket:
             # await asyncio.sleep(0.1)
             asyncio.create_task(self.__on_message(message))
 
-    def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600):
+    def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600, ):
         '''Connect to the websocket and initialize data stores.'''
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initializing WebSocket.")
         self.testnet = testnet
         self.symbol = symbol
         self.timeout = timeout
+        self._detect_hook = {}
 
         if api_key is not None and api_secret is None:
             raise ValueError('api_secret is required if api_key is provided')
@@ -59,7 +63,7 @@ class BitMEXWebsocket:
 
         # We can subscribe right in the connection querystring, so let's build that.
         # Subscribe to all pertinent endpoints
-        # wsURL = self.__get_url(# todo 订阅内容拆解成单独的方法，首次调用时申请
+        # wsURL = self.__get_url
 
         # # Connected. Wait for partials
         # self.__wait_for_symbol(symbol)
@@ -72,7 +76,18 @@ class BitMEXWebsocket:
         self.exited = True
         await asyncio.create_task(self.ws.close())
 
-    def get_instrument(self):
+    async def _ensure_subscribed(self, subject: str):
+        # If subject has not benn subscribed
+        if subject not in self.data.keys():
+            # subscribe
+            asyncio.create_task(self.__send_command('subscribe', args=[
+                f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
+            # wait for 'partial'
+            sub_event = asyncio.Event()
+            self._detect_hook[{"table": f"{subject}", "action": "partial"}] = sub_event
+            await sub_event.wait()
+
+    async def get_instrument(self):
         '''Get the raw instrument data for this symbol.'''
         # Turn the 'tickSize' into 'tickLog' for use in rounding
         instrument = self.data['instrument'][0]
@@ -188,6 +203,13 @@ class BitMEXWebsocket:
         table = message.get("table")
         action = message.get("action")
         try:
+            to_del_items = []
+            for condition, event in self._detect_hook.items():
+                if event.is_set():
+                    to_del_items.append(event)
+                elif all([message.get(key, None) == value for key, value in condition.items()]):
+                    to_del_items.append(event)
+            [self._detect_hook.pop(item) for item in to_del_items]
             if 'subscribe' in message:
                 self.logger.debug("Subscribed to %s." % message['subscribe'])
             elif action:
