@@ -155,16 +155,16 @@ class BitMEXWebsocket:
         '''
 
         # You can sub to orderBookL2 for all levels, or orderBook10 for top 10 levels & save bandwidth
-        symbolSubs = ["execution", "instrument", "order", "orderBookL2", "position", "quote", "trade"]
-        genericSubs = ["margin"]
+        # symbolSubs = ["execution", "instrument", "order", "orderBookL2", "position", "quote", "trade"]
+        # genericSubs = ["margin"]
 
-        subscriptions = [sub + ':' + self.symbol for sub in symbolSubs]
-        subscriptions += genericSubs
+        # subscriptions = [sub + ':' + self.symbol for sub in symbolSubs]
+        # subscriptions += genericSubs
 
         urlParts = list(urllib.parse.urlparse(
             "https://testnet.bitmex.com/api/v1" if self.testnet else 'https://www.bitmex.com/api/v1'))
         urlParts[0] = urlParts[0].replace('http', 'ws')
-        urlParts[2] = "/realtime?subscribe={}".format(','.join(subscriptions))
+        urlParts[2] = "/realtime"
         return urllib.parse.urlunparse(urlParts)
 
     def __wait_for_account(self):
