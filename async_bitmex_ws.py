@@ -28,7 +28,13 @@ class BitMEXWebsocket:
         '''
         instance = cls(symbol, api_key, api_secret, testnet, timeout)
         await instance.__connect()
+        asyncio.create_task(instance._activte())
         return instance
+
+    async def _activte(self):
+        async for message in self.ws:
+            # await asyncio.sleep(0.1)
+            self.__on_message(message)
 
     def __init__(self, symbol, api_key=None, api_secret=None, testnet=False, timeout=3600):
         '''Connect to the websocket and initialize data stores.'''
