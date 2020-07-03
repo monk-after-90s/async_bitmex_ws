@@ -4,7 +4,8 @@ import time
 import websockets
 import traceback
 import json
-import logging
+from loguru import logger
+
 import urllib
 import math
 from util.api_key import generate_signature
@@ -42,7 +43,7 @@ class AsyncBitMEXWebsocket:
 
     def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600, ):
         '''Connect to the websocket and initialize data stores.'''
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.logger.debug("Initializing WebSocket.")
         self.testnet = testnet
         self.symbol = symbol
