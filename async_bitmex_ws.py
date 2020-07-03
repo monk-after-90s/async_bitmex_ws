@@ -45,10 +45,12 @@ class AsyncBitMEXWebsocket:
         self._detect_hook[msg_receiver] = condition
         return msg_receiver
 
-    async def new_message(self):
+    async def new_message(self, filter: dict = None):
+        if filter is None:
+            filter = {}
         hook = None
         while not hook:
-            hook = self.put_detect_hook({})
+            hook = self.put_detect_hook(filter)
             yield await hook
             hook = None
 
