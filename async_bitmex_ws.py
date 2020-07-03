@@ -18,7 +18,7 @@ from util.api_key import generate_signature
 # On connect, it synchronously asks for a push of all this data then returns.
 # Right after, the MM can start using its data. It will be updated in realtime, so the MM can
 # poll really often if it wants.
-class BitMEXWebsocket:
+class AsyncBitMEXWebsocket:
     # Don't grow a table larger than this amount. Helps cap memory usage.
     MAX_TABLE_LEN = 200
 
@@ -71,6 +71,7 @@ class BitMEXWebsocket:
         #     self.__wait_for_account()
         # self.logger.info('Got all market data. Starting.')
 
+    # todo ping pong心跳
     async def exit(self):
         '''Call this to exit - will close websocket.'''
         self.exited = True
@@ -235,8 +236,9 @@ class BitMEXWebsocket:
 
                     # Limit the max length of the table to avoid excessive memory usage.
                     # Don't trim orders because we'll lose valuable state if we do.
-                    if table not in ['order', 'orderBookL2'] and len(self.data[table]) > BitMEXWebsocket.MAX_TABLE_LEN:
-                        self.data[table] = self.data[table][BitMEXWebsocket.MAX_TABLE_LEN // 2:]
+                    if table not in ['order', 'orderBookL2'] and len(
+                            self.data[table]) > AsyncBitMEXWebsocket.MAX_TABLE_LEN:
+                        self.data[table] = self.data[table][AsyncBitMEXWebsocket.MAX_TABLE_LEN // 2:]
 
                 elif action == 'update':
                     self.logger.debug('%s: updating %s' % (table, message['data']))
