@@ -36,7 +36,7 @@ class AsyncBitMEXWebsocket:
         return instance
 
     async def _activte(self):
-        async for message in self.ws:
+        async for message in self.ws:  # todo 将ws开放出来，比如用探针实现
             # await asyncio.sleep(0.1)
             asyncio.create_task(self.__on_message(message))
 
@@ -85,7 +85,7 @@ class AsyncBitMEXWebsocket:
                 f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
             sub_event = asyncio.Event()
-            self._detect_hook[{"table": f"{subject}", "action": "partial"}] = sub_event
+            self._detect_hook[sub_event] = {"table": f"{subject}", "action": "partial"}
             await sub_event.wait()
 
     async def get_instrument(self):
@@ -206,11 +206,12 @@ class AsyncBitMEXWebsocket:
         action = message.get("action")
         try:
             to_del_items = []
-            for condition, event in self._detect_hook.items():
+            for event, condition in self._detect_hook.items():
                 if event.is_set():
                     to_del_items.append(event)
                 elif all([message.get(key, None) == value for key, value in condition.items()]):
                     to_del_items.append(event)
+                    event.set()
             [self._detect_hook.pop(item) for item in to_del_items]
             if 'subscribe' in message:
                 self.logger.debug("Subscribed to %s." % message['subscribe'])
