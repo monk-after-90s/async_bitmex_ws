@@ -92,7 +92,7 @@ class BitMEXWebsocket:
         instrument = self.data['instrument'][0]
         return {k: round(float(v or 0), instrument['tickLog']) for k, v in ticker.items()}
 
-    def funds(self):
+    def margin(self):
         '''Get your margin details.'''
         return self.data['margin'][0]
 
@@ -231,20 +231,6 @@ class BitMEXWebsocket:
                     raise Exception("Unknown action: %s" % action)
         except:
             self.logger.error(traceback.format_exc())
-
-    def __on_error(self, error):
-        '''Called on fatal websocket errors. We exit on these.'''
-        if not self.exited:
-            self.logger.error("Error : %s" % error)
-            raise websockets.WebSocketException(error)
-
-    def __on_open(self):
-        '''Called when the WS opens.'''
-        self.logger.debug("Websocket Opened.")
-
-    def __on_close(self):
-        '''Called on websocket close.'''
-        self.logger.info('Websocket Closed')
 
 
 # Utility method for finding an item in the store.
