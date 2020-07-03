@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 import websockets
 import traceback
@@ -42,6 +43,7 @@ class BitMEXWebsocket:
         self.logger.debug("Initializing WebSocket.")
         self.testnet = testnet
         self.symbol = symbol
+        self.timeout = timeout
 
         if api_key is not None and api_secret is None:
             raise ValueError('api_secret is required if api_key is provided')
@@ -129,7 +131,7 @@ class BitMEXWebsocket:
             self.logger.info("Authenticating with API Key.")
             # To auth to the WS using an API key, we generate a signature of a nonce and
             # the WS API endpoint.
-            expires = generate_nonce()
+            expires = self.__generate_nonce()
             return [
                 "api-expires: " + str(expires),
                 "api-signature: " + generate_signature(self.api_secret, 'GET', '/realtime', expires, ''),
@@ -138,6 +140,9 @@ class BitMEXWebsocket:
         else:
             self.logger.info("Not authenticating.")
             return []
+
+    def __generate_nonce(self):
+        return str(int(round(time.time()) + self.timeout))
 
     def __get_url(self):
         '''
