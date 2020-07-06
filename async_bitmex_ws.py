@@ -27,18 +27,65 @@ class AsyncBitMEXWebsocket:
     genericSubs = ["margin"]
 
     @classmethod
-    async def create_instance(cls, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600):
-        '''
-        Asynchronously create instance.
-        '''
+    async def create_instance(cls, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600 * 24, ):
         instance = cls(symbol, api_key, api_secret, testnet, timeout)
-        await instance.__connect()
-        asyncio.create_task(instance._activte())
+        await instance.instantiation_complete.wait()
         return instance
 
-    async def _activte(self):
+    async def _reactivate(self):
+        # close the old connection
+        try:
+            asyncio.create_task(self.ws.close())
+            self._reactivate_task.cancel()
+            self._reactivate_task = self.new_reactivate_task
+        except:
+            pass
+        # build the new connection
+        await self.__connect()
+        logger.info('Activate successfully.')
+
+        # heartbeat
+        _send_ping_after_task = asyncio.create_task(self._ping_pong())
+        self.instantiation_complete.set()
+        # handle new message
         async for message in self.ws:
+            self.last_msg_time = asyncio.get_running_loop().time()
+            # handle new message
             asyncio.create_task(self.__on_message(message))
+
+    async def _ping_pong(self):
+        '''
+        heartbeat
+        '''
+        while True:
+            # timeout
+            if self.last_msg_time + 5 < asyncio.get_running_loop().time():
+                logger.info('ping')
+                asyncio.create_task(self.ws.send('ping'))
+                try:
+                    await asyncio.wait_for(self._wait_pong(), timeout=5)
+                except TimeoutError:
+                    logger.warning('Heartbeat timeout, connection lost.Trying to reconnect.')
+                    self.new_reactivate_task = asyncio.create_task(self._reactivate())
+            else:
+                await asyncio.sleep(5)
+
+        # async for news in self.new_message_watcher():
+        #     # if timeout
+        #     if asyncio.get_running_loop().time() - last_time > 5:
+        #         # send 'ping'
+        #         asyncio.create_task(self.ws.send('ping'))
+        #         try:
+        #             await asyncio.wait_for(self._wait_pong(), timeout=5)
+        #         except:
+        #             logger.warning('Heartbeat timeout, connection lost.Trying to reconnect.')
+        #             asyncio.create_task(self._reconnect_remote())
+        #     last_time = asyncio.get_running_loop().time()
+
+    async def _wait_pong(self):
+        async for news in self.new_message_watcher():
+            if news == 'pong':
+                break
 
     def put_detect_hook(self, condition: dict):
         msg_receiver = asyncio.get_running_loop().create_future()
@@ -77,6 +124,9 @@ class AsyncBitMEXWebsocket:
         self.symbol = symbol
         self.timeout = timeout
         self._detect_hook = {}
+        self.last_msg_time = 0
+        self._reactivate_task: asyncio.Task = None
+        self.instantiation_complete = asyncio.Event()
 
         if api_key is not None and api_secret is None:
             raise ValueError('api_secret is required if api_key is provided')
@@ -89,6 +139,7 @@ class AsyncBitMEXWebsocket:
         self.data = {}
         self.keys = {}
         self.exited = False
+        self._reactivate_task = asyncio.create_task(self._reactivate())
 
         # We can subscribe right in the connection querystring, so let's build that.
         # Subscribe to all pertinent endpoints
@@ -100,7 +151,6 @@ class AsyncBitMEXWebsocket:
         #     self.__wait_for_account()
         # self.logger.info('Got all market data. Starting.')
 
-    # todo ping pong心跳
     async def exit(self):
         '''Call this to exit - will close websocket.'''
         self.exited = True
@@ -120,23 +170,24 @@ class AsyncBitMEXWebsocket:
                 f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
             async for news in self.new_message_watcher():
-                if news.get('table', '') == f"{subject}" and news.get("action", '') == "partial":
-                    return news
-                # Not authenticated
-                # {"status": 401,
-                #  "error": "User requested an account-locked subscription but no authorization was provided.",
-                #  "meta": {
-                #      "notes": "Account-locked tables include the following: account,affiliate,execution,margin,order,position,privateNotifications,transact,wallet"},
-                #  "request": {"op": "subscribe", "args": ["margin"]}}
-                elif news.get('status', 0) == 401 and \
-                        subject in news.get('request', {}).get('args', []) and \
-                        subject in ['account', 'affiliate', 'execution', 'margin',
-                                    'order', 'position', 'privateNotifications',
-                                    'transact', 'wallet'] and \
-                        news.get('error',
-                                 '') == "User requested an account-locked subscription but no authorization was provided.":
-                    raise ConnectionRefusedError(
-                        'User requested an account-locked subscription but no authorization was provided.')
+                if isinstance(news, dict):
+                    if news.get('table', '') == f"{subject}" and news.get("action", '') == "partial":
+                        return news
+                    # Not authenticated
+                    # {"status": 401,
+                    #  "error": "User requested an account-locked subscription but no authorization was provided.",
+                    #  "meta": {
+                    #      "notes": "Account-locked tables include the following: account,affiliate,execution,margin,order,position,privateNotifications,transact,wallet"},
+                    #  "request": {"op": "subscribe", "args": ["margin"]}}
+                    elif news.get('status', 0) == 401 and \
+                            subject in news.get('request', {}).get('args', []) and \
+                            subject in ['account', 'affiliate', 'execution', 'margin',
+                                        'order', 'position', 'privateNotifications',
+                                        'transact', 'wallet'] and \
+                            news.get('error',
+                                     '') == "User requested an account-locked subscription but no authorization was provided.":
+                        raise ConnectionRefusedError(
+                            'User requested an account-locked subscription but no authorization was provided.')
 
     async def get_instrument(self):
         '''Get the raw instrument data for this symbol.'''
@@ -266,11 +317,9 @@ class AsyncBitMEXWebsocket:
 
     async def __on_message(self, message):
         '''Handler for parsing WS messages.'''
-        message = json.loads(message)
+        message = json.loads(message) if message != 'pong' else message
         self.logger.debug(json.dumps(message))
 
-        table = message.get("table")
-        action = message.get("action")
         try:
             to_del_items = []
             # future: asyncio.Future
@@ -281,6 +330,9 @@ class AsyncBitMEXWebsocket:
                     to_del_items.append(future)
 
             [self._detect_hook.pop(item) for item in to_del_items]
+
+            table = message.get("table")
+            action = message.get("action")
             if 'subscribe' in message:
                 self.logger.debug("Subscribed to %s." % message['subscribe'])
             elif action:
