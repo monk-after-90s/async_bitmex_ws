@@ -123,6 +123,11 @@ class AsyncBitMEXWebsocket:
         await self._ensure_subscribed('trade')
         return self.data['trade']
 
+    async def last_quote(self):
+        '''Get the last quote.'''
+        await self._ensure_subscribed('quote')
+        return self.data['quote'][-1]
+
     async def get_ticker(self):
         '''Return a ticker object. Generated from quote and trade.'''
         lastQuote = self.data['quote'][-1]
