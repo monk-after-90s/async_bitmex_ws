@@ -1,5 +1,5 @@
 '''
-todo 更改为自定测试，找异步测试框架，没有的话就自己写
+todo 更改为自动测试，找异步测试框架，没有的话就自己写
 '''
 import signal
 import asyncio
