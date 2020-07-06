@@ -54,6 +54,8 @@ class AsyncBitMEXWebsocket:
         '''
         if filter is None:
             filter = {}
+        elif 'table' in filter:
+            await asyncio.create_task(self._ensure_subscribed(filter['table']))
         hook = None
         while not hook:
             hook = self.put_detect_hook(filter)
@@ -109,8 +111,9 @@ class AsyncBitMEXWebsocket:
             asyncio.create_task(self.__send_command('subscribe', args=[
                 f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
-            async for news in self.new_message_watcher({"table": f"{subject}", "action": "partial"}):
-                break
+            async for news in self.new_message_watcher():
+                if news.get('table', '') == f"{subject}" and news.get("action", '') == "partial":
+                    break
 
     async def get_instrument(self):
         '''Get the raw instrument data for this symbol.'''
