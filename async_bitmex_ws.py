@@ -96,7 +96,12 @@ class AsyncBitMEXWebsocket:
         await asyncio.create_task(self.ws.close())
 
     async def _ensure_subscribed(self, subject: str):
-        # If subject has not benn subscribed
+        '''
+        Ensure the subject to be subscribed.
+
+        :param subject:One among instrument, trade, quote, margin, position, orderBookL2, order, execution and so on
+        '''
+        # If subject has not been subscribed
         if subject not in self.data.keys():
             # subscribe
             asyncio.create_task(self.__send_command('subscribe', args=[
