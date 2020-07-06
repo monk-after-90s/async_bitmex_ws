@@ -43,7 +43,7 @@ class BitMEXWebsocket:
 
         # We can subscribe right in the connection querystring, so let's build that.
         # Subscribe to all pertinent endpoints
-        wsURL = self.__get_url()  # todo 订阅内容拆解成单独的方法，首次调用时申请
+        wsURL = self.__get_url()
         self.logger.info("Connecting to %s" % wsURL)
         self.__connect(wsURL, symbol)
         self.logger.info('Connected to WS.')
