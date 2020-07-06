@@ -122,6 +122,21 @@ class AsyncBitMEXWebsocket:
             async for news in self.new_message_watcher():
                 if news.get('table', '') == f"{subject}" and news.get("action", '') == "partial":
                     return news
+                # Not authenticated
+                # {"status": 401,
+                #  "error": "User requested an account-locked subscription but no authorization was provided.",
+                #  "meta": {
+                #      "notes": "Account-locked tables include the following: account,affiliate,execution,margin,order,position,privateNotifications,transact,wallet"},
+                #  "request": {"op": "subscribe", "args": ["margin"]}}
+                elif news.get('status', 0) == 401 and \
+                        subject in news.get('request', {}).get('args', []) and \
+                        subject in ['account', 'affiliate', 'execution', 'margin',
+                                    'order', 'position', 'privateNotifications',
+                                    'transact', 'wallet'] and \
+                        news.get('error',
+                                 '') == "User requested an account-locked subscription but no authorization was provided.":
+                    raise ConnectionRefusedError(
+                        'User requested an account-locked subscription but no authorization was provided.')
 
     async def get_instrument(self):
         '''Get the raw instrument data for this symbol.'''
