@@ -124,7 +124,16 @@ async def test_open_orders():
         beeprint.pp(news, sort_keys=False)
 
 
-loop.create_task(test_open_orders())
+async def test_ping_pong():
+    global ws
+    ws = await AsyncBitMEXWebsocket.create_instance(symbol='XBTUSD',
+                                                    api_key='IGMzIdy55DWYGKVSFIECBQjy',
+                                                    api_secret='HB7z6vhXvu9fSJrcYnjWm6R_9JhSs6dVYwKPQryadRSG8atF',
+                                                    testnet=True)
+    beeprint.pp(await ws.get_instrument(), sort_keys=False)
+
+
+loop.create_task(test_margin())
 
 try:
     loop.run_forever()
