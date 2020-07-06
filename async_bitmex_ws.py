@@ -333,56 +333,55 @@ class AsyncBitMEXWebsocket:
                     future.set_result(message)
 
             [self._detect_hook.pop(item) for item in to_del_items]
+            if isinstance(message, dict):
+                table = message.get("table")
+                action = message.get("action")
+                if 'subscribe' in message:
+                    self.logger.debug("Subscribed to %s." % message['subscribe'])
+                elif action:
+                    if table not in self.data:
+                        self.data[table] = []
 
-            table = message.get("table")
-            action = message.get("action")
-            if 'subscribe' in message:
-                self.logger.debug("Subscribed to %s." % message['subscribe'])
-            elif action:
+                    # There are four possible actions from the WS:
+                    # 'partial' - full table image
+                    # 'insert'  - new row
+                    # 'update'  - update row
+                    # 'delete'  - delete row
+                    if action == 'partial':
+                        self.logger.debug("%s: partial" % table)
+                        self.data[table] = message['data']
+                        # Keys are communicated on partials to let you know how to uniquely identify
+                        # an item. We use it for updates.
+                        self.keys[table] = message['keys']
+                    elif action == 'insert':
+                        self.logger.debug('%s: inserting %s' % (table, message['data']))
+                        self.data[table] += message['data']
 
-                if table not in self.data:
-                    self.data[table] = []
+                        # Limit the max length of the table to avoid excessive memory usage.
+                        # Don't trim orders because we'll lose valuable state if we do.
+                        if table not in ['order', 'orderBookL2'] and len(
+                                self.data[table]) > AsyncBitMEXWebsocket.MAX_TABLE_LEN:
+                            self.data[table] = self.data[table][AsyncBitMEXWebsocket.MAX_TABLE_LEN // 2:]
 
-                # There are four possible actions from the WS:
-                # 'partial' - full table image
-                # 'insert'  - new row
-                # 'update'  - update row
-                # 'delete'  - delete row
-                if action == 'partial':
-                    self.logger.debug("%s: partial" % table)
-                    self.data[table] = message['data']
-                    # Keys are communicated on partials to let you know how to uniquely identify
-                    # an item. We use it for updates.
-                    self.keys[table] = message['keys']
-                elif action == 'insert':
-                    self.logger.debug('%s: inserting %s' % (table, message['data']))
-                    self.data[table] += message['data']
-
-                    # Limit the max length of the table to avoid excessive memory usage.
-                    # Don't trim orders because we'll lose valuable state if we do.
-                    if table not in ['order', 'orderBookL2'] and len(
-                            self.data[table]) > AsyncBitMEXWebsocket.MAX_TABLE_LEN:
-                        self.data[table] = self.data[table][AsyncBitMEXWebsocket.MAX_TABLE_LEN // 2:]
-
-                elif action == 'update':
-                    self.logger.debug('%s: updating %s' % (table, message['data']))
-                    # Locate the item in the collection and update it.
-                    for updateData in message['data']:
-                        item = find_by_keys(self.keys[table], self.data[table], updateData)
-                        if not item:
-                            return  # No item found to update. Could happen before push
-                        item.update(updateData)
-                        # Remove cancelled / filled orders
-                        if table == 'order' and not order_leaves_quantity(item):
+                    elif action == 'update':
+                        self.logger.debug('%s: updating %s' % (table, message['data']))
+                        # Locate the item in the collection and update it.
+                        for updateData in message['data']:
+                            item = find_by_keys(self.keys[table], self.data[table], updateData)
+                            if not item:
+                                return  # No item found to update. Could happen before push
+                            item.update(updateData)
+                            # Remove cancelled / filled orders
+                            if table == 'order' and not order_leaves_quantity(item):
+                                self.data[table].remove(item)
+                    elif action == 'delete':
+                        self.logger.debug('%s: deleting %s' % (table, message['data']))
+                        # Locate the item in the collection and remove it.
+                        for deleteData in message['data']:
+                            item = find_by_keys(self.keys[table], self.data[table], deleteData)
                             self.data[table].remove(item)
-                elif action == 'delete':
-                    self.logger.debug('%s: deleting %s' % (table, message['data']))
-                    # Locate the item in the collection and remove it.
-                    for deleteData in message['data']:
-                        item = find_by_keys(self.keys[table], self.data[table], deleteData)
-                        self.data[table].remove(item)
-                else:
-                    raise Exception("Unknown action: %s" % action)
+                    else:
+                        raise Exception("Unknown action: %s" % action)
         except:
             self.logger.error(traceback.format_exc())
 
