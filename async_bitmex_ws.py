@@ -49,6 +49,8 @@ class AsyncBitMEXWebsocket:
         '''
         async for news in new_message_watcher():
             ...
+
+        :param filter:For example:{'table':'orderBookL2_25','action':'update'}.For more info, refer https://testnet.bitmex.com/app/wsAPI
         '''
         if filter is None:
             filter = {}
