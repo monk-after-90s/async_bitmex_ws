@@ -37,7 +37,7 @@ class AsyncBitMEXWebsocket:
         return instance
 
     async def _activte(self):
-        async for message in self.ws:  # todo 将ws开放出来，比如用探针实现
+        async for message in self.ws:
             asyncio.create_task(self.__on_message(message))
 
     def put_detect_hook(self, condition: dict):
@@ -118,7 +118,12 @@ class AsyncBitMEXWebsocket:
         instrument['tickLog'] = int(math.fabs(math.log10(instrument['tickSize'])))
         return instrument
 
-    def get_ticker(self):
+    async def recent_trades(self):
+        '''Get recent trades.'''
+        await self._ensure_subscribed('trade')
+        return self.data['trade']
+
+    async def get_ticker(self):
         '''Return a ticker object. Generated from quote and trade.'''
         lastQuote = self.data['quote'][-1]
         lastTrade = self.data['trade'][-1]
@@ -150,10 +155,6 @@ class AsyncBitMEXWebsocket:
         orders = self.data['order']
         # Filter to only open orders and those that we actually placed
         return [o for o in orders if str(o['clOrdID']).startswith(clOrdIDPrefix) and order_leaves_quantity(o)]
-
-    def recent_trades(self):
-        '''Get recent trades.'''
-        return self.data['trade']
 
     #
     # End Public Methods
