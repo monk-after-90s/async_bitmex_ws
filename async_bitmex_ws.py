@@ -132,6 +132,13 @@ class AsyncBitMEXWebsocket:
 
     async def get_ticker(self):
         '''Return a ticker object. Generated from quote and trade.'''
+        quote_task = asyncio.create_task(self.recent_quotes())
+        trade_task = asyncio.create_task(self.recent_trades())
+        instrument_task = asyncio.create_task(self.get_instrument())
+
+        await quote_task
+        await trade_task
+        await instrument_task
         lastQuote = self.data['quote'][-1]
         lastTrade = self.data['trade'][-1]
         ticker = {
