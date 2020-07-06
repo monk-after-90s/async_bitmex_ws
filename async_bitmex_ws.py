@@ -193,8 +193,9 @@ class AsyncBitMEXWebsocket:
         await self._ensure_subscribed('orderBookL2')
         return self.data['orderBookL2']
 
-    def open_orders(self, clOrdIDPrefix):
+    async def open_orders(self, clOrdIDPrefix=''):
         '''Get all your open orders.'''
+        await self._ensure_subscribed('order')
         orders = self.data['order']
         # Filter to only open orders and those that we actually placed
         return [o for o in orders if str(o['clOrdID']).startswith(clOrdIDPrefix) and order_leaves_quantity(o)]
