@@ -69,7 +69,7 @@ class AsyncBitMEXWebsocket:
             yield await hook
             hook = None
 
-    def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600, ):
+    def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=3600 * 24, ):
         '''Connect to the websocket and initialize data stores.'''
         self.logger = logger
         self.logger.debug("Initializing WebSocket.")
