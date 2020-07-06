@@ -163,8 +163,9 @@ class AsyncBitMEXWebsocket:
         '''Get your positions.'''
         return self.data['position']
 
-    def market_depth(self):
+    async def market_depth(self):
         '''Get market depth (orderbook). Returns all levels.'''
+        await self._ensure_subscribed('orderBookL2')
         return self.data['orderBookL2']
 
     def open_orders(self, clOrdIDPrefix):
