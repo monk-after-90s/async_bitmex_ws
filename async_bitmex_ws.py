@@ -178,8 +178,9 @@ class AsyncBitMEXWebsocket:
         instrument = self.data['instrument'][0]
         return {k: round(float(v or 0), instrument['tickLog']) for k, v in ticker.items()}
 
-    def margin(self):
+    async def margin(self):
         '''Get your margin details.'''
+        await self._ensure_subscribed('margin')
         return self.data['margin'][0]
 
     def positions(self):
