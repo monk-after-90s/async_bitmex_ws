@@ -43,32 +43,35 @@ class AsyncBitMEXWebsocket:
         # build the new connection
         await self.__connect()
         logger.info('Activate successfully.')
+        # instance instantiation complete
+        self.instantiation_complete.set()
 
         # heartbeat
         _send_ping_after_task = asyncio.create_task(self._ping_pong())
-        self.instantiation_complete.set()
         # handle new message
         async for message in self.ws:
-            self.last_msg_time = asyncio.get_running_loop().time()
+            # new message clear heartbeat
+            _send_ping_after_task.cancel()
+            # self.last_msg_time = asyncio.get_running_loop().time()
             # handle new message
             asyncio.create_task(self.__on_message(message))
+            # activate new heartbeat
+            _send_ping_after_task = asyncio.create_task(self._ping_pong())
 
     async def _ping_pong(self):
         '''
         heartbeat
         '''
         while True:
+            await asyncio.sleep(5)
             # timeout
-            if self.last_msg_time + 5 < asyncio.get_running_loop().time():
-                logger.info('ping')
-                asyncio.create_task(self.ws.send('ping'))
-                try:
-                    await asyncio.wait_for(self._wait_pong(), timeout=5)
-                except TimeoutError:
-                    logger.warning('Heartbeat timeout, connection lost.Trying to reconnect.')
-                    self.new_reactivate_task = asyncio.create_task(self._reactivate())
-            else:
-                await asyncio.sleep(5)
+            asyncio.create_task(self.ws.send('ping'))
+            logger.info('ping')
+            try:
+                await asyncio.wait_for(self._wait_pong(), timeout=5)
+            except TimeoutError:
+                logger.warning('Heartbeat timeout, connection lost.Trying to reconnect.')
+                self.new_reactivate_task = asyncio.create_task(self._reactivate())
 
         # async for news in self.new_message_watcher():
         #     # if timeout
@@ -124,8 +127,6 @@ class AsyncBitMEXWebsocket:
         self.symbol = symbol
         self.timeout = timeout
         self._detect_hook = {}
-        self.last_msg_time = 0
-        self._reactivate_task: asyncio.Task = None
         self.instantiation_complete = asyncio.Event()
 
         if api_key is not None and api_secret is None:
