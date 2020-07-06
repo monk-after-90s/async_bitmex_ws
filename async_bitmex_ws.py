@@ -183,8 +183,9 @@ class AsyncBitMEXWebsocket:
         await self._ensure_subscribed('margin')
         return self.data['margin'][0]
 
-    def positions(self):
+    async def positions(self):
         '''Get your positions.'''
+        await self._ensure_subscribed('position')
         return self.data['position']
 
     async def market_depth(self):
