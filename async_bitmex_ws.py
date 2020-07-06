@@ -45,16 +45,22 @@ class AsyncBitMEXWebsocket:
         self._detect_hook[msg_receiver] = condition
         return msg_receiver
 
-    async def new_message_watcher(self, filter: dict = None):
+    async def new_message_watcher(self, table: str = '', action: str = '', filter: dict = None):
         '''
         async for news in new_message_watcher():
             ...
 
+        :param table:table
+        :param action:action
         :param filter:For example:{'table':'orderBookL2_25','action':'update'}.For more info, refer https://testnet.bitmex.com/app/wsAPI
         '''
         if filter is None:
             filter = {}
-        elif 'table' in filter:
+        if bool(table):
+            filter['table'] = table
+        if bool(action):
+            filter['action'] = action
+        if 'table' in filter:
             partial = await asyncio.create_task(self._ensure_subscribed(filter['table']))
             yield partial
         hook = None
