@@ -327,10 +327,10 @@ class AsyncBitMEXWebsocket:
             to_del_items = []
             # future: asyncio.Future
             for future, condition in self._detect_hook.items():
-                if all([message.get(key, None) == value for key, value in condition.items()]):
-                    future.set_result(message)
                 if future.done():
                     to_del_items.append(future)
+                elif message == 'pong' or all([message.get(key, None) == value for key, value in condition.items()]):
+                    future.set_result(message)
 
             [self._detect_hook.pop(item) for item in to_del_items]
 
