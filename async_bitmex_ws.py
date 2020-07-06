@@ -45,7 +45,11 @@ class AsyncBitMEXWebsocket:
         self._detect_hook[msg_receiver] = condition
         return msg_receiver
 
-    async def new_message(self, filter: dict = None):
+    async def new_message_watcher(self, filter: dict = None):
+        '''
+        async for news in new_message_watcher():
+            ...
+        '''
         if filter is None:
             filter = {}
         hook = None
@@ -98,7 +102,7 @@ class AsyncBitMEXWebsocket:
             asyncio.create_task(self.__send_command('subscribe', args=[
                 f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
-            async for news in self.new_message({"table": f"{subject}", "action": "partial"}):
+            async for news in self.new_message_watcher({"table": f"{subject}", "action": "partial"}):
                 break
 
     async def get_instrument(self):
