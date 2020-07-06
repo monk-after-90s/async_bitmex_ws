@@ -50,13 +50,14 @@ class AsyncBitMEXWebsocket:
         _send_ping_after_task = asyncio.create_task(self._ping_pong())
         # handle new message
         async for message in self.ws:
-            # new message clear heartbeat
-            _send_ping_after_task.cancel()
+            if message != 'pong':
+                # new message clear heartbeat
+                _send_ping_after_task.cancel()
+                # activate new heartbeat
+                _send_ping_after_task = asyncio.create_task(self._ping_pong())
             # self.last_msg_time = asyncio.get_running_loop().time()
             # handle new message
             asyncio.create_task(self.__on_message(message))
-            # activate new heartbeat
-            _send_ping_after_task = asyncio.create_task(self._ping_pong())
 
     async def _ping_pong(self):
         '''
@@ -88,6 +89,7 @@ class AsyncBitMEXWebsocket:
     async def _wait_pong(self):
         async for news in self.new_message_watcher():
             if news == 'pong':
+                logger.info("pong!")
                 break
 
     def put_detect_hook(self, condition: dict):
