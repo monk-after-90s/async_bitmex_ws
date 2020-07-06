@@ -214,9 +214,9 @@ class AsyncBitMEXWebsocket:
             # the WS API endpoint.
             expires = self.__generate_nonce()
             return [
-                "api-expires: " + str(expires),
-                "api-signature: " + generate_signature(self.api_secret, 'GET', '/realtime', expires, ''),
-                "api-key:" + self.api_key
+                ("api-expires", expires),
+                ("api-signature", generate_signature(self.api_secret, 'GET', '/realtime', expires, '')),
+                ("api-key", self.api_key)
             ]
         else:
             self.logger.info("Not authenticating.")
