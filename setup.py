@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="async-bitmex-ws",  # Replace with your own username
+    name="async_bitmex_ws",
     version="0.9.9",
     author="Antas",
     author_email="",
