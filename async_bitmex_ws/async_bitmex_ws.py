@@ -221,17 +221,18 @@ class AsyncBitMEXWebsocket:
         await self._ensure_subscribed('quote', symbol)
         return self.data['quote']
 
-    async def get_ticker(self):
+    async def get_ticker(self, symbol: str):
         '''Return a ticker object. Generated from quote and trade.'''
-        quote_task = asyncio.create_task(self.recent_quotes())
-        trade_task = asyncio.create_task(self.recent_trades())
-        instrument_task = asyncio.create_task(self.get_instrument())
+        assert symbol
+        quote_task = asyncio.create_task(self.recent_quotes(symbol))
+        trade_task = asyncio.create_task(self.recent_trades(symbol))
+        instrument_task = asyncio.create_task(self.get_instrument(symbol))
 
         await quote_task
         await trade_task
         await instrument_task
-        lastQuote = self.data['quote'][-1]
-        lastTrade = self.data['trade'][-1]
+        lastQuote = self.data[symbol]['quote'][-1]
+        lastTrade = self.data[symbol]['trade'][-1]
         ticker = {
             "last": lastTrade['price'],
             "buy": lastQuote['bidPrice'],
@@ -240,7 +241,7 @@ class AsyncBitMEXWebsocket:
         }
 
         # The instrument has a tickSize. Use it to round values.
-        instrument = self.data['instrument'][0]
+        instrument = self.data[symbol]['instrument'][0]
         return {k: round(float(v or 0), instrument['tickLog']) for k, v in ticker.items()}
 
     async def margin(self):
