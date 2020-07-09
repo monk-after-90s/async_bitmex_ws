@@ -181,9 +181,10 @@ class AsyncBitMEXWebsocket:
             asyncio.create_task(self.__send_command('subscribe', args=[
                 f'{subject}:{symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
-            async for news in self.new_message_watcher():
+            async for news in self.new_message_watcher(symbol):
                 if isinstance(news, dict):
-                    if news.get('table', '') == f"{subject}" and news.get("action", '') == "partial":
+                    if news.get('table', '') == f"{subject}" and news.get("action", '') == "partial" \
+                            and self._parse_symbol(news) == symbol:
                         return news
                     # Not authenticated
                     # {"status": 401,
