@@ -215,9 +215,10 @@ class AsyncBitMEXWebsocket:
         await self._ensure_subscribed('trade', symbol)
         return self.data['trade']
 
-    async def recent_quotes(self):
+    async def recent_quotes(self, symbol: str):
         '''Get recent quotes.'''
-        await self._ensure_subscribed('quote')
+        assert symbol
+        await self._ensure_subscribed('quote', symbol)
         return self.data['quote']
 
     async def get_ticker(self):
