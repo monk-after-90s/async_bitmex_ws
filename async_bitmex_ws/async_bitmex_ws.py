@@ -254,10 +254,10 @@ class AsyncBitMEXWebsocket:
         await self._ensure_subscribed('position', symbol)
         return self.data[symbol]['position']
 
-    async def market_depth(self):
+    async def market_depth(self, symbol: str):
         '''Get market depth (orderbook). Returns all levels.'''
-        await self._ensure_subscribed('orderBookL2')
-        return self.data['orderBookL2']
+        await self._ensure_subscribed('orderBookL2', symbol)
+        return self.data[symbol]['orderBookL2']
 
     async def open_orders(self, clOrdIDPrefix=''):
         '''Get all your open orders.'''
