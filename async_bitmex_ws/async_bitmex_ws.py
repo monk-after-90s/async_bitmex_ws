@@ -160,7 +160,7 @@ class AsyncBitMEXWebsocket:
         self.exited = True
         await asyncio.create_task(self.ws.close())
 
-    async def _ensure_subscribed(self, symbol: str, subject: str):
+    async def _ensure_subscribed(self, subject: str, symbol: str = ''):
         '''
         Ensure the subject to be subscribed.
 
