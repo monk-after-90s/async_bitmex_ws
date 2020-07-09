@@ -140,7 +140,7 @@ class AsyncBitMEXWebsocket:
         self.api_key = api_key
         self.api_secret = api_secret
 
-        self.data = {}
+        self.data = {}  # {'ETHUSD':{...},'XBTUSD':{...},...,'':{...}} # todo data下面加一层symbol
         self.keys = {}
         self.exited = False
         self._reactivate_task = asyncio.create_task(self._reactivate())
