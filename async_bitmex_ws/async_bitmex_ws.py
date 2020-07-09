@@ -29,7 +29,7 @@ class AsyncBitMEXWebsocket:
     @classmethod
     async def create_instance(cls, api_key=None, api_secret=None, testnet=False, timeout=999999999999, ):
         instance = cls(api_key, api_secret, testnet, timeout)
-        await instance.instantiation_complete.wait()
+        await instance._instantiation_complete.wait()
         return instance
 
     async def _reactivate(self):
@@ -44,7 +44,7 @@ class AsyncBitMEXWebsocket:
         await self.__connect()
         logger.info('Activate successfully.')
         # instance instantiation complete
-        self.instantiation_complete.set()
+        self._instantiation_complete.set()
 
         # heartbeat
         _send_ping_after_task = asyncio.create_task(self._ping_pong())
@@ -133,7 +133,7 @@ class AsyncBitMEXWebsocket:
         self.testnet = testnet
         self.timeout = timeout
         self._detect_hook = {}
-        self.instantiation_complete = asyncio.Event()
+        self._instantiation_complete = asyncio.Event()
 
         if api_key is not None and api_secret is None:
             raise ValueError('api_secret is required if api_key is provided')
