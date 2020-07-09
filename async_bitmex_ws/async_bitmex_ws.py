@@ -160,18 +160,21 @@ class AsyncBitMEXWebsocket:
         self.exited = True
         await asyncio.create_task(self.ws.close())
 
-    async def _ensure_subscribed(self, subject: str):
+    async def _ensure_subscribed(self, symbol: str, subject: str):
         '''
         Ensure the subject to be subscribed.
 
         :param subject:One among instrument, trade, quote, margin, position, orderBookL2, order, execution and so on
         :return: partial message
         '''
+        # ensure symbol has a slot
+        if symbol not in self.data.keys():
+            self.data[symbol] = {}
         # If subject has not been subscribed
-        if subject not in self.data.keys():
+        if subject not in self.data[symbol].keys():
             # subscribe
             asyncio.create_task(self.__send_command('subscribe', args=[
-                f'{subject}:{self.symbol}'] if subject in self.symbolSubs else [f'{subject}']))
+                f'{subject}:{symbol}'] if subject in self.symbolSubs else [f'{subject}']))
             # wait for 'partial'
             async for news in self.new_message_watcher():
                 if isinstance(news, dict):
