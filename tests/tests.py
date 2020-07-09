@@ -4,7 +4,7 @@ todo 更改为自动测试，找异步测试框架，没有的话就自己写
 import signal
 import asyncio
 import sys
-from async_bitmex_ws import AsyncBitMEXWebsocket
+from async_bitmex_ws.async_bitmex_ws import AsyncBitMEXWebsocket
 import beeprint
 
 """

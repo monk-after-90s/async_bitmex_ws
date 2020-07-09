@@ -1,6 +1,5 @@
 .idea
 tmp.json
 test.py
-tests
 bitmex_ws.py
 .DS_Store
