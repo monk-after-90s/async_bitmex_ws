@@ -324,7 +324,10 @@ class AsyncBitMEXWebsocket:
 
     def _parse_symbol(self, msg):
         try:
-            return msg['data'][0]['symbol']
+            if msg['table'] in self.symbolSubs:
+                return msg['data'][0]['symbol']
+            else:
+                return ''
         except:
             return ''
 
