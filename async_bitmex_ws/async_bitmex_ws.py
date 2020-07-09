@@ -94,9 +94,11 @@ class AsyncBitMEXWebsocket:
                 logger.info("pong!")
                 break
 
-    def put_detect_hook(self, condition: dict):
+    def put_detect_hook(self, symbol: str, condition: dict):
         msg_receiver = asyncio.get_running_loop().create_future()
-        self._detect_hook[msg_receiver] = condition
+        if symbol not in self._detect_hook.keys():
+            self._detect_hook[symbol] = {}
+        self._detect_hook[symbol][msg_receiver] = condition
         return msg_receiver
 
     async def new_message_watcher(self, table: str = '', action: str = '', filter: dict = None):
