@@ -29,8 +29,8 @@ class AsyncBitMEXWebsocket:
     genericSubs = ["margin"]
 
     @classmethod
-    async def create_instance(cls, symbol='', api_key=None, api_secret=None, testnet=False, timeout=999999999999, ):
-        instance = cls(symbol, api_key, api_secret, testnet, timeout)
+    async def create_instance(cls, api_key=None, api_secret=None, testnet=False, timeout=999999999999, ):
+        instance = cls(api_key, api_secret, testnet, timeout)
         await instance.instantiation_complete.wait()
         return instance
 
@@ -123,12 +123,11 @@ class AsyncBitMEXWebsocket:
             yield await hook
             hook = None
 
-    def __init__(self, symbol='', api_key=None, api_secret=None, testnet=False, timeout=999999999999, ):
+    def __init__(self, api_key=None, api_secret=None, testnet=False, timeout=999999999999, ):
         '''Connect to the websocket and initialize data stores. timeout seems to have no effect.'''
         self.logger = logger
         self.logger.debug("Initializing WebSocket.")
         self.testnet = testnet
-        self.symbol = symbol
         self.timeout = timeout
         self._detect_hook = {}
         self.instantiation_complete = asyncio.Event()
