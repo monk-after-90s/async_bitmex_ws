@@ -200,11 +200,12 @@ class AsyncBitMEXWebsocket:
                         raise ConnectionRefusedError(
                             'User requested an account-locked subscription but no authorization was provided.')
 
-    async def get_instrument(self):
+    async def get_instrument(self, symbol: str):
         '''Get the raw instrument data for this symbol.'''
         # Turn the 'tickSize' into 'tickLog' for use in rounding
-        await self._ensure_subscribed('instrument')
-        instrument = self.data['instrument'][0]
+        assert symbol
+        await self._ensure_subscribed('instrument', symbol)
+        instrument = self.data[symbol]['instrument'][0]
         instrument['tickLog'] = int(math.fabs(math.log10(instrument['tickSize'])))
         return instrument
 
