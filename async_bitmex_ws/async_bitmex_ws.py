@@ -59,7 +59,7 @@ class AsyncBitMEXWebsocket:
                 _send_ping_after_task = asyncio.create_task(self._ping_pong())
             # self.last_msg_time = asyncio.get_running_loop().time()
             # handle new message
-            asyncio.create_task(self.__on_message(message))
+            self.__on_message(message)
 
     async def _ping_pong(self):
         '''
@@ -319,7 +319,8 @@ class AsyncBitMEXWebsocket:
             args = []
         await self.ws.send(json.dumps({"op": command, "args": args}))
 
-    async def __on_message(self, message):
+
+    def __on_message(self, message):
         '''Handler for parsing WS messages.'''
         message = json.loads(message) if message != 'pong' else message
         self.logger.debug(json.dumps(message))
