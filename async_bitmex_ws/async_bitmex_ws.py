@@ -101,11 +101,12 @@ class AsyncBitMEXWebsocket:
         self._detect_hook[symbol][msg_receiver] = condition
         return msg_receiver
 
-    async def new_message_watcher(self, table: str = '', action: str = '', filter: dict = None):
+    async def new_message_watcher(self, symbol: str = '', table: str = '', action: str = '', filter: dict = None):
         '''
         async for news in new_message_watcher():
             ...
 
+        :param symbol:symbol, '' means that the message being watched is not symbol related.
         :param table:table
         :param action:action
         :param filter:For example:{'table':'orderBookL2_25','action':'update'}.For more info, refer https://testnet.bitmex.com/app/wsAPI
@@ -117,11 +118,13 @@ class AsyncBitMEXWebsocket:
         if bool(action):
             filter['action'] = action
         if 'table' in filter:
-            partial = await asyncio.create_task(self._ensure_subscribed(filter['table']))
-            yield partial
+            assert symbol if filter['table'] in self.symbolSubs else not bool(symbol)
+            partial = await asyncio.create_task(self._ensure_subscribed(symbol, filter['table']))
+            if partial:
+                yield partial
         hook = None
         while not hook:
-            hook = self.put_detect_hook(filter)
+            hook = self.put_detect_hook(symbol, filter)
             yield await hook
             hook = None
 
