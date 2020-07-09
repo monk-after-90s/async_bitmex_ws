@@ -213,13 +213,13 @@ class AsyncBitMEXWebsocket:
         '''Get recent trades.'''
         assert symbol
         await self._ensure_subscribed('trade', symbol)
-        return self.data['trade']
+        return self.data[symbol]['trade']
 
     async def recent_quotes(self, symbol: str):
         '''Get recent quotes.'''
         assert symbol
         await self._ensure_subscribed('quote', symbol)
-        return self.data['quote']
+        return self.data[symbol]['quote']
 
     async def get_ticker(self, symbol: str):
         '''Return a ticker object. Generated from quote and trade.'''
@@ -247,7 +247,7 @@ class AsyncBitMEXWebsocket:
     async def margin(self):
         '''Get your margin details.'''
         await self._ensure_subscribed('margin')
-        return self.data['margin'][0]
+        return self.data['']['margin'][0]
 
     async def positions(self, symbol: str):
         '''Get your positions.'''
