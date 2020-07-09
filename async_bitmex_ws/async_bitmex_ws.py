@@ -209,9 +209,10 @@ class AsyncBitMEXWebsocket:
         instrument['tickLog'] = int(math.fabs(math.log10(instrument['tickSize'])))
         return instrument
 
-    async def recent_trades(self):
+    async def recent_trades(self, symbol: str):
         '''Get recent trades.'''
-        await self._ensure_subscribed('trade')
+        assert symbol
+        await self._ensure_subscribed('trade', symbol)
         return self.data['trade']
 
     async def recent_quotes(self):
