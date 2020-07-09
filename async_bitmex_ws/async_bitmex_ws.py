@@ -339,15 +339,19 @@ class AsyncBitMEXWebsocket:
         self.logger.debug(json.dumps(message))
 
         try:
-            to_del_items = []
+            to_del_items = {}
             # future: asyncio.Future
-            for future, condition in self._detect_hook.items():
-                if future.done():
-                    to_del_items.append(future)
-                elif message == 'pong' or all([message.get(key, None) == value for key, value in condition.items()]):
-                    future.set_result(message)
+            for symbol, hook in self._detect_hook.items():
+                for future, condition in hook.items():
+                    if future.done():
+                        to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
+                    elif message == 'pong' or all(
+                            [message.get(key, None) == value for key, value in condition.items()]):
+                        future.set_result(message)
+                        to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
 
-            [self._detect_hook.pop(item) for item in to_del_items]
+            [(self._detect_hook[symbol].pop(hook) for hook in hooks) \
+             for symbol, hooks in to_del_items.keys()]
             if isinstance(message, dict):
                 table = message.get("table")
                 action = message.get("action")
