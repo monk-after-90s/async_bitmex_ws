@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="async_bitmex_ws",
-    version="0.9.9",
+    version="0.9.11",
     author="Antas",
     author_email="",
     description="Asynchronous bitmex websocket api development kit",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/monk-after-90s/async_bitmex_websocket.git",
+    url="https://github.com/monk-after-90s/async_bitmex_ws.git",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
