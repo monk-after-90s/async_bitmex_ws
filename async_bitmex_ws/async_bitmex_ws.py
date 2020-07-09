@@ -1,5 +1,3 @@
-# todo 有空提交到pypi
-
 import asyncio
 import time
 
@@ -341,18 +339,20 @@ class AsyncBitMEXWebsocket:
         '''Handler for parsing WS messages.'''
         message = json.loads(message) if message != 'pong' else message
         self.logger.debug(json.dumps(message))
+        message_symbol = self._parse_symbol(message)
 
         try:
             to_del_items = {}
             # future: asyncio.Future
             for symbol, hook in self._detect_hook.items():
-                for future, condition in hook.items():
-                    if future.done():
-                        to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
-                    elif message == 'pong' or all(
-                            [message.get(key, None) == value for key, value in condition.items()]):
-                        future.set_result(message)
-                        to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
+                if symbol == message_symbol:
+                    for future, condition in hook.items():
+                        if future.done():
+                            to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
+                        elif message == 'pong' or all(
+                                [message.get(key, None) == value for key, value in condition.items()]):
+                            future.set_result(message)
+                            to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
 
             [(self._detect_hook[symbol].pop(hook) for hook in hooks) \
              for symbol, hooks in to_del_items.keys()]
