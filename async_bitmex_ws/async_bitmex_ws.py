@@ -319,6 +319,11 @@ class AsyncBitMEXWebsocket:
             args = []
         await self.ws.send(json.dumps({"op": command, "args": args}))
 
+    def _parse_symbol(self, msg):
+        try:
+            return msg['data'][0]['symbol']
+        except:
+            return ''
 
     def __on_message(self, message):
         '''Handler for parsing WS messages.'''
