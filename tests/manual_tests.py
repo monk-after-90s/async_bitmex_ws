@@ -16,6 +16,8 @@ import beeprint
 """
 loop = asyncio.get_event_loop()
 
+loop.set_debug(True)
+
 
 def safely_exit():
     sys.exit(0)
