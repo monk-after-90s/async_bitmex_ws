@@ -320,7 +320,7 @@ class AsyncBitMEXWebsocket:
 
     def __on_message(self, message):
         '''Handler for parsing WS messages.'''
-        message = json.loads(message) if message != 'pong' else message
+        message = json.loads(message) if message != 'pong' else message  # a dict or 'pong'
         self.logger.debug(json.dumps(message))
         message_symbol = self._parse_symbol(message)
 
