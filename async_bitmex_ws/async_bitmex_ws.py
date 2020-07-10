@@ -332,8 +332,7 @@ class AsyncBitMEXWebsocket:
                     for future, filter in hook.items():
                         if future.done():
                             to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
-                        elif message == 'pong' or all(
-                                [message.get(key, None) == value for key, value in condition.items()]):
+                        elif all([message.get(key, None) == value for key, value in filter.items()]):
                             future.set_result(message)
                             to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
 
