@@ -140,6 +140,7 @@ class AsyncBitMEXWebsocket:
     async def exit(self):
         '''Call this to exit - will close websocket.'''
         self.exited = True
+        self._reactivate_task.cancel()
         await asyncio.create_task(self.ws.close())
 
     async def _ensure_subscribed(self, subject: str, symbol: str = ''):
