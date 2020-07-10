@@ -80,11 +80,11 @@ class AsyncBitMEXWebsocket:
                 logger.info("pong!")
                 break
 
-    def put_detect_hook(self, symbol: str, condition: dict):
+    def put_detect_hook(self, symbol: str, filter: dict):
         msg_receiver = asyncio.get_running_loop().create_future()
         if symbol not in self._detect_hook.keys():
             self._detect_hook[symbol] = {}
-        self._detect_hook[symbol][msg_receiver] = condition
+        self._detect_hook[symbol][msg_receiver] = filter
         return msg_receiver
 
     async def new_message_watcher(self, symbol: str = '', table: str = '', action: str = '', filter: dict = None):
@@ -329,7 +329,7 @@ class AsyncBitMEXWebsocket:
             # future: asyncio.Future
             for symbol, hook in self._detect_hook.items():
                 if symbol == message_symbol:
-                    for future, condition in hook.items():
+                    for future, filter in hook.items():
                         if future.done():
                             to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
                         elif message == 'pong' or all(
