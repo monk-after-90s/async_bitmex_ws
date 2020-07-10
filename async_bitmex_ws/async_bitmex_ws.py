@@ -74,18 +74,6 @@ class AsyncBitMEXWebsocket:
                 logger.warning('Heartbeat timeout, connection lost.Trying to reconnect.')
                 self.new_reactivate_task = asyncio.create_task(self._reactivate())
 
-        # async for news in self.new_message_watcher():
-        #     # if timeout
-        #     if asyncio.get_running_loop().time() - last_time > 5:
-        #         # send 'ping'
-        #         asyncio.create_task(self.ws.send('ping'))
-        #         try:
-        #             await asyncio.wait_for(self._wait_pong(), timeout=5)
-        #         except:
-        #             logger.warning('Heartbeat timeout, connection lost.Trying to reconnect.')
-        #             asyncio.create_task(self._reconnect_remote())
-        #     last_time = asyncio.get_running_loop().time()
-
     async def _wait_pong(self):
         async for news in self.new_message_watcher():
             if news == 'pong':
@@ -132,7 +120,7 @@ class AsyncBitMEXWebsocket:
         self.logger.debug("Initializing WebSocket.")
         self.testnet = testnet
         self.timeout = timeout
-        self._detect_hook = {}
+        self._detect_hook = {}  # {'ETHUSD':{...},'XBTUSD':{...},...,'':{...}}
         self._instantiation_complete = asyncio.Event()
 
         if api_key is not None and api_secret is None:
@@ -143,20 +131,10 @@ class AsyncBitMEXWebsocket:
         self.api_key = api_key
         self.api_secret = api_secret
 
-        self.data = {}  # {'ETHUSD':{...},'XBTUSD':{...},...,'':{...}} # todo data下面加一层symbol
+        self.data = {}  # {'ETHUSD':{...},'XBTUSD':{...},...,'':{...}}
         self.keys = {}
         self.exited = False
         self._reactivate_task = asyncio.create_task(self._reactivate())
-
-        # We can subscribe right in the connection querystring, so let's build that.
-        # Subscribe to all pertinent endpoints
-        # wsURL = self.__get_url
-
-        # # Connected. Wait for partials
-        # self.__wait_for_symbol(symbol)
-        # if api_key:
-        #     self.__wait_for_account()
-        # self.logger.info('Got all market data. Starting.')
 
     async def exit(self):
         '''Call this to exit - will close websocket.'''
