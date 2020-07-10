@@ -340,7 +340,7 @@ class AsyncBitMEXWebsocket:
                             to_del_items[symbol] = to_del_items.get(symbol, []) + [future]
 
             [(self._detect_hook[symbol].pop(hook) for hook in hooks) \
-             for symbol, hooks in to_del_items.keys()]
+             for symbol, hooks in to_del_items.items()]
 
             if isinstance(message, dict):
                 # ensure symbol in data
