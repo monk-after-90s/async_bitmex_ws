@@ -105,7 +105,7 @@ class AsyncBitMEXWebsocket:
             filter['action'] = action
         if 'table' in filter:
             assert symbol if filter['table'] in self.symbolSubs else not bool(symbol)
-            partial = await asyncio.create_task(self._ensure_subscribed(symbol, filter['table']))
+            partial = await asyncio.create_task(self._ensure_subscribed(filter['table'], symbol))
             if partial:
                 yield partial
         hook = None
