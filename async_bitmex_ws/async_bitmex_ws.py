@@ -23,6 +23,7 @@ class AsyncBitMEXWebsocket:
     # Don't grow a table larger than this amount. Helps cap memory usage.
     MAX_TABLE_LEN = 200
 
+    # todo: to expand the table, expand the two lists
     symbolSubs = ["execution", "instrument", "order", "orderBookL2", "position", "quote", "trade"]
     genericSubs = ["margin"]
 
