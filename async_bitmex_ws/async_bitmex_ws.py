@@ -64,8 +64,10 @@ class AsyncBitMEXWebsocket:
         '''
         heartbeat
         '''
-        while True:
+        while not self.exited:
             await asyncio.sleep(5)
+            if self.exited:
+                break
             # timeout
             asyncio.create_task(self.ws.send('ping'))
             logger.info('ping')
