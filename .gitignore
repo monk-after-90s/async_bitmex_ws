@@ -3,3 +3,4 @@ tmp.json
 test.py
 bitmex_ws.py
 .DS_Store
+manual_tests.py
