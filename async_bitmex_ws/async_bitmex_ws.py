@@ -10,6 +10,12 @@ import urllib
 import math
 from util.api_key import generate_signature
 
+import beeprint
+
+
+def beeprint_format(o):
+    return '\n' + beeprint.pp(o, output=False, sort_keys=False, string_break_enable=False)
+
 
 # Naive implementation of connecting to BitMEX websocket for streaming realtime data.
 # The Marketmaker still interacts with this as if it were a REST Endpoint, but now it can get
@@ -328,7 +334,7 @@ class AsyncBitMEXWebsocket:
     def __on_message(self, message):
         '''Handler for parsing WS messages.'''
         message = json.loads(message) if message != 'pong' else message  # a dict or 'pong'
-        self.logger.debug(json.dumps(message))
+        self.logger.debug(beeprint_format(message))
         message_symbol = self._parse_symbol(message)
 
         try:
@@ -353,7 +359,7 @@ class AsyncBitMEXWebsocket:
                 table = message.get("table")
                 action = message.get("action")
                 if 'subscribe' in message:
-                    self.logger.debug("Subscribed to %s." % message['subscribe'])
+                    self.logger.debug("Subscribed to %s." % beeprint_format(message['subscribe']))
                 elif action:
                     if table not in self.data[message_symbol]:
                         self.data[message_symbol][table] = []
@@ -370,7 +376,7 @@ class AsyncBitMEXWebsocket:
                         # an item. We use it for updates.
                         self.keys[table] = message['keys']
                     elif action == 'insert':
-                        self.logger.debug('%s: inserting %s' % (table, message['data']))
+                        self.logger.debug('%s: inserting %s' % (table, beeprint_format(message['data'])))
                         self.data[message_symbol][table] += message['data']
 
                         # Limit the max length of the table to avoid excessive memory usage.
@@ -381,7 +387,7 @@ class AsyncBitMEXWebsocket:
                                                                AsyncBitMEXWebsocket.MAX_TABLE_LEN // 2:]
 
                     elif action == 'update':
-                        self.logger.debug('%s: updating %s' % (table, message['data']))
+                        self.logger.debug('%s: updating %s' % (table, beeprint_format(message['data'])))
                         # Locate the item in the collection and update it.
                         for updateData in message['data']:
                             item = find_by_keys(self.keys[table], self.data[message_symbol][table], updateData)
@@ -392,7 +398,7 @@ class AsyncBitMEXWebsocket:
                             if table == 'order' and not order_leaves_quantity(item):
                                 self.data[message_symbol][table].remove(item)
                     elif action == 'delete':
-                        self.logger.debug('%s: deleting %s' % (table, message['data']))
+                        self.logger.debug('%s: deleting %s' % (table, beeprint_format(message['data'])))
                         # Locate the item in the collection and remove it.
                         for deleteData in message['data']:
                             item = find_by_keys(self.keys[table], self.data[message_symbol][table], deleteData)
