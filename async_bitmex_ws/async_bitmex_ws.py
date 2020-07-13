@@ -319,10 +319,11 @@ class AsyncBitMEXWebsocket:
         try:
             if msg['table'] in self.symbolSubs:
                 return msg['data'][0]['symbol']
-            else:
-                return ''
         except:
-            return ''
+            try:
+                return msg['filter']['symbol']
+            except:
+                return ''
 
     def __on_message(self, message):
         '''Handler for parsing WS messages.'''
