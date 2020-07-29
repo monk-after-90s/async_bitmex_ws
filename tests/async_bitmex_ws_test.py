@@ -5,11 +5,9 @@ import asyncio
 from loguru import logger
 import ccxt.async_support as ccxt
 
-from async_bitmex_ws.async_bitmex_ws import beeprint_format
-
 
 class TestPingPong(AsyncTestCase):
-    enable_test = False
+    # enable_test = False
     aws: AsyncBitMEXWebsocket = None
 
     @classmethod
@@ -38,7 +36,7 @@ class TestPingPong(AsyncTestCase):
 
 
 class TestOrderThenPingPong(AsyncTestCase):
-    enable_test = False
+    # enable_test = False
     aws: AsyncBitMEXWebsocket = None
 
     @classmethod
@@ -125,6 +123,16 @@ class MultiTest(AsyncTestCase):
         cls.aws = await AsyncBitMEXWebsocket.create_instance(api_key='IGMzIdy55DWYGKVSFIECBQjy',
                                                              api_secret='HB7z6vhXvu9fSJrcYnjWm6R_9JhSs6dVYwKPQryadRSG8atF',
                                                              testnet=True)
+        cls.bitmex = ccxt.bitmex({
+            "apiKey": "IGMzIdy55DWYGKVSFIECBQjy",
+            "secret": "HB7z6vhXvu9fSJrcYnjWm6R_9JhSs6dVYwKPQryadRSG8atF",
+        })
+        cls.bitmex.set_sandbox_mode(True)
+
+        sell_BTC_USD_task = asyncio.create_task(cls.bitmex.create_order('BTC/USD', 'limit', 'sell', 1, 1000))
+        buy_BTC_USD_task = asyncio.create_task(cls.bitmex.create_order('BTC/USD', 'limit', 'buy', 1, 1000))
+        await sell_BTC_USD_task
+        cls.tmp_BTC_USD_buy_order = await buy_BTC_USD_task
 
     async def test_instrument(self):
         n = 0
@@ -214,15 +222,191 @@ class MultiTest(AsyncTestCase):
             self.assertTrue(*[k in recent_trade for k in sample_trade.keys()])
 
         async for news in self.aws.new_message_watcher(symbol='XBTUSD', table='trade'):
-            logger.info(beeprint_format(news))
+            # logger.info(beeprint_format(news))
             break
 
     async def test_positions(self):
-        pass
+        position_sample = {
+            'account': 308110,
+            'symbol': 'XBTUSD',
+            'currency': 'XBt',
+            'underlying': 'XBT',
+            'quoteCurrency': 'USD',
+            'commission': 0.00075,
+            'initMarginReq': 0.01,
+            'maintMarginReq': 0.0035,
+            'riskLimit': 20000000000,
+            'leverage': 100,
+            'crossMargin': True,
+            'deleveragePercentile': 1,
+            'rebalancedPnl': 59,
+            'prevRealisedPnl': -12,
+            'prevUnrealisedPnl': 0,
+            'prevClosePrice': 10268.24,
+            'openingTimestamp': '2020-07-28T03:00:00.000Z',
+            'openingQty': 0,
+            'openingCost': 0,
+            'openingComm': 0,
+            'openOrderBuyQty': 0,
+            'openOrderBuyCost': 0,
+            'openOrderBuyPremium': 0,
+            'openOrderSellQty': 0,
+            'openOrderSellCost': 0,
+            'openOrderSellPremium': 0,
+            'execBuyQty': 5,
+            'execBuyCost': 45660,
+            'execSellQty': 7,
+            'execSellCost': 63915,
+            'execQty': -2,
+            'execCost': 18255,
+            'execComm': 73,
+            'currentTimestamp': '2020-07-28T03:55:41.263Z',
+            'currentQty': -2,
+            'currentCost': 18255,
+            'currentComm': 73,
+            'realisedCost': -2,
+            'unrealisedCost': 18257,
+            'grossOpenCost': 0,
+            'grossOpenPremium': 0,
+            'grossExecCost': 18262,
+            'isOpen': True,
+            'markPrice': 10975.4,
+            'markValue': 18222,
+            'riskValue': 18222,
+            'homeNotional': -0.00018222,
+            'foreignNotional': 2,
+            'posState': '',
+            'posCost': 18257,
+            'posCost2': 18257,
+            'posCross': 21,
+            'posInit': 183,
+            'posComm': 14,
+            'posLoss': 0,
+            'posMargin': 218,
+            'posMaint': 161,
+            'posAllowance': 0,
+            'taxableMargin': 0,
+            'initMargin': 0,
+            'maintMargin': 183,
+            'sessionMargin': 0,
+            'targetExcessMargin': 0,
+            'varMargin': 0,
+            'realisedGrossPnl': 2,
+            'realisedTax': 0,
+            'realisedPnl': -71,
+            'unrealisedGrossPnl': -35,
+            'longBankrupt': 0,
+            'shortBankrupt': 0,
+            'taxBase': 0,
+            'indicativeTaxRate': None,
+            'indicativeTax': 0,
+            'unrealisedTax': 0,
+            'unrealisedPnl': -35,
+            'unrealisedPnlPcnt': -0.0019,
+            'unrealisedRoePcnt': -0.1917,
+            'simpleQty': None,
+            'simpleCost': None,
+            'simpleValue': None,
+            'simplePnl': None,
+            'simplePnlPcnt': None,
+            'avgCostPrice': 10954.1023,
+            'avgEntryPrice': 10954.1023,
+            'breakEvenPrice': 10946.5,
+            'marginCallPrice': 100000000,
+            'liquidationPrice': 100000000,
+            'bankruptPrice': 100000000,
+            'timestamp': '2020-07-28T03:55:41.263Z',
+            'lastPrice': 10975.4,
+            'lastValue': 18222,
+        }
+        n = 0
+        async for news in self.aws.new_message_watcher(symbol='XBTUSD', table='position', ):
+            positions = await self.aws.positions('XBTUSD')
+
+            if n == 0:
+                self.assertEqual(news['action'], 'partial')
+                self.assertEqual(len(positions), 1)
+                self.assertEqual(positions[0], news['data'][0])
+                for key in position_sample.keys():
+                    self.assertTrue(key in positions[0].keys())
+            else:
+                self.assertEqual(news['table'], 'position')
+                self.assertTrue(news['action'] in ['update', 'insert', 'delete'])
+                self.assertEqual(self.aws._parse_symbol(news), 'XBTUSD')
+                if news['action'] == 'update':
+                    for key, value in news['data'][0].items():
+                        self.assertEqual(value, positions[0][key])
+
+            n += 1
+            if n >= 5:
+                break
+
+    async def test_open_orders(self):
+        order_sample = {
+            'orderID': '96796a8a-6204-4a98-054c-6e64c4200667',
+            'clOrdID': '',
+            'clOrdLinkID': '',
+            'account': 308110,
+            'symbol': 'XBTUSD',
+            'side': 'Buy',
+            'simpleOrderQty': None,
+            'orderQty': 1,
+            'price': 1000,
+            'displayQty': None,
+            'stopPx': None,
+            'pegOffsetValue': None,
+            'pegPriceType': '',
+            'currency': 'USD',
+            'settlCurrency': 'XBt',
+            'ordType': 'Limit',
+            'timeInForce': 'GoodTillCancel',
+            'execInst': '',
+            'contingencyType': '',
+            'exDestination': 'XBME',
+            'ordStatus': 'New',
+            'triggered': '',
+            'workingIndicator': True,
+            'ordRejReason': '',
+            'simpleLeavesQty': None,
+            'leavesQty': 1,
+            'simpleCumQty': None,
+            'cumQty': 0,
+            'avgPx': None,
+            'multiLegReportingType': 'SingleSecurity',
+            'text': 'Submitted via API.',
+            'transactTime': '2020-07-29T06:43:38.521Z',
+            'timestamp': '2020-07-29T06:43:38.521Z',
+        }
+        async for news in self.aws.new_message_watcher(table='order', symbol='XBTUSD'):
+            self.assertEqual(news['action'], 'partial')
+            open_orders = await self.aws.open_orders(symbol='XBTUSD')
+            self.assertTrue(
+                any([self.tmp_BTC_USD_buy_order['id'] == open_order["orderID"] for open_order in open_orders]))
+            self.assertTrue(*[order in open_orders for order in news['data']])
+            for open_order in open_orders:
+                self.assertTrue(*[key in open_order for key in order_sample.keys()])
+            await asyncio.sleep(1)
+            break
 
     @classmethod
     async def tearDownClass(cls) -> None:
-        await cls.aws.exit()
+        aws_exit_task = asyncio.create_task(cls.aws.exit())
+        cancle_order_task = asyncio.create_task(
+            cls.bitmex.cancel_order(cls.tmp_BTC_USD_buy_order['id'], cls.tmp_BTC_USD_buy_order['symbol']))
+
+        BTC_USD_buy_task = asyncio.create_task(cls.bitmex.create_order('BTC/USD', 'limit', 'buy', 1, 50000))
+        try:
+            await BTC_USD_buy_task
+        except:
+            pass
+        bitmex_close_task = asyncio.create_task(cls.bitmex.close())
+
+        await bitmex_close_task
+        await aws_exit_task
+        try:
+            await cancle_order_task
+        except:
+            pass
 
 
 if __name__ == '__main__':
