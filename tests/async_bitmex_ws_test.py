@@ -7,7 +7,7 @@ import ccxt.async_support as ccxt
 
 
 class TestPingPong(AsyncTestCase):
-    # enable_test = False
+    enable_test = True
     aws: AsyncBitMEXWebsocket = None
 
     @classmethod
@@ -36,7 +36,7 @@ class TestPingPong(AsyncTestCase):
 
 
 class TestOrderThenPingPong(AsyncTestCase):
-    # enable_test = False
+    enable_test = True
     aws: AsyncBitMEXWebsocket = None
 
     @classmethod
@@ -115,7 +115,7 @@ class TestOrderThenPingPong(AsyncTestCase):
 
 
 class MultiTest(AsyncTestCase):
-    # enable_test = False
+    enable_test = True
     aws: AsyncBitMEXWebsocket = None
 
     @classmethod
@@ -128,9 +128,13 @@ class MultiTest(AsyncTestCase):
             "secret": "HB7z6vhXvu9fSJrcYnjWm6R_9JhSs6dVYwKPQryadRSG8atF",
         })
         cls.bitmex.set_sandbox_mode(True)
-
-        sell_BTC_USD_task = asyncio.create_task(cls.bitmex.create_order('BTC/USD', 'limit', 'sell', 1, 1000))
+        order_book_task = asyncio.create_task(cls.bitmex.fetch_l2_order_book('BTC/USD'))
+        await cls.bitmex.private_post_position_leverage(params={'symbol': f'XBTUSD', 'leverage': 1})
         buy_BTC_USD_task = asyncio.create_task(cls.bitmex.create_order('BTC/USD', 'limit', 'buy', 1, 1000))
+        order_book = await order_book_task
+        sell_BTC_USD_task = asyncio.create_task(
+            cls.bitmex.create_order('BTC/USD', 'limit', 'sell', 1, order_book['bids'][0][0]))
+
         await sell_BTC_USD_task
         cls.tmp_BTC_USD_buy_order = await buy_BTC_USD_task
 
@@ -393,20 +397,21 @@ class MultiTest(AsyncTestCase):
         aws_exit_task = asyncio.create_task(cls.aws.exit())
         cancle_order_task = asyncio.create_task(
             cls.bitmex.cancel_order(cls.tmp_BTC_USD_buy_order['id'], cls.tmp_BTC_USD_buy_order['symbol']))
+        order_book_task = asyncio.create_task(cls.bitmex.fetch_l2_order_book('BTC/USD'))
 
-        BTC_USD_buy_task = asyncio.create_task(cls.bitmex.create_order('BTC/USD', 'limit', 'buy', 1, 50000))
+        await cls.bitmex.private_post_position_leverage(params={'symbol': f'XBTUSD', 'leverage': 1})
+        BTC_USD_buy_task = asyncio.create_task(
+            cls.bitmex.create_order('BTC/USD', 'limit', 'buy', 1, (await order_book_task)['asks'][0][0]))
         try:
             await BTC_USD_buy_task
-        except:
-            pass
-        bitmex_close_task = asyncio.create_task(cls.bitmex.close())
-
-        await bitmex_close_task
-        await aws_exit_task
-        try:
             await cancle_order_task
         except:
             pass
+        finally:
+            bitmex_close_task = asyncio.create_task(cls.bitmex.close())
+
+            await bitmex_close_task
+        await aws_exit_task
 
 
 if __name__ == '__main__':
