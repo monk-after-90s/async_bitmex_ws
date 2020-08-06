@@ -12,6 +12,8 @@ from util.api_key import generate_signature
 
 import beeprint
 
+from NoLossAsyncGenerator import no_data_loss_async_generator_decorator
+
 
 def beeprint_format(o):
     return '\n' + beeprint.pp(o, output=False, sort_keys=False, string_break_enable=False)
@@ -96,6 +98,7 @@ class AsyncBitMEXWebsocket:
         self._detect_hook[symbol][msg_receiver] = filter
         return msg_receiver
 
+    @no_data_loss_async_generator_decorator
     async def new_message_watcher(self, symbol: str = '', table: str = '', action: str = '', filter: dict = None):
         '''
         async for news in new_message_watcher():
