@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="async_bitmex_ws",
-    version="1.0.0",
+    version="1.0.1",
     author="Antas",
     author_email="",
     description="Asynchronous bitmex websocket api development kit",
