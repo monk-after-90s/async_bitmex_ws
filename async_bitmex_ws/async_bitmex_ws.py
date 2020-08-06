@@ -120,11 +120,11 @@ class AsyncBitMEXWebsocket:
             partial = await asyncio.create_task(self._ensure_subscribed(filter['table'], symbol))
             if partial:
                 yield partial
-        hook = None
-        while not hook:
+        hook = self.put_detect_hook(symbol, filter)
+        while True:
+            msg = await hook
             hook = self.put_detect_hook(symbol, filter)
-            yield await hook
-            hook = None
+            yield msg
 
     def __init__(self, api_key=None, api_secret=None, testnet=False, timeout=999999999999, ):
         '''Connect to the websocket and initialize data stores. timeout seems to have no effect.'''
