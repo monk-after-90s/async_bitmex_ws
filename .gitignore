@@ -4,3 +4,7 @@ test.py
 bitmex_ws.py
 .DS_Store
 manual_tests.py
+
+*.egg-info
+build/
+dist/
